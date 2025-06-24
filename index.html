@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Créatif Avancé | SPA Complète</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Dépendances -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.3/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.3/ScrollTrigger.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+    <style>
+        /* ============================ */
+        /* === 1. ROOT & RESET ======== */
+        /* ============================ */
+        :root {
+            --font-main: 'Poppins', sans-serif;
+            --ease-out-cubic: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+            --transition-fast: 0.3s var(--ease-out-cubic);
+            --transition-medium: 0.5s var(--ease-out-cubic);
+            
+            /* Thème Clair */
+            --bg-light: #f0f2f5; --text-light: #1c1c1e; --primary-light: #6a11cb;
+            --secondary-light: #2575fc; --glass-bg-light: rgba(255, 255, 255, 0.4);
+            --glass-border-light: rgba(255, 255, 255, 0.6); --shadow-light: rgba(0, 0, 0, 0.1);
+
+            /* Thème Sombre */
+            --bg-dark: #0d0f1a; --text-dark: #e0e0e0; --primary-dark: #8e44ad;
+            --secondary-dark: #3498db; --glass-bg-dark: rgba(20, 25, 40, 0.5);
+            --glass-border-dark: rgba(255, 255, 255, 0.1); --shadow-dark: rgba(0, 0, 0, 0.3);
+            
+            /* Initialisation */
+            --bg-color: var(--bg-light); --text-color: var(--text-light); --primary-color: var(--primary-light);
+            --secondary-color: var(--secondary-light); --glass-bg: var(--glass-bg-light);
+            --glass-border: var(--glass-border-light); --shadow-color: var(--shadow-light);
+        }
+
+        body.dark-mode {
+            --bg-color: var(--bg-dark); --text-color: var(--text-dark); --primary-color: var(--primary-dark);
+            --secondary-color: var(--secondary-dark); --glass-bg: var(--glass-bg-dark);
+            --glass-border: var(--glass-border-dark); --shadow-color: var(--shadow-dark);
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font-main); background-color: var(--bg-color);
+            color: var(--text-color); overflow-x: hidden;
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+        body.no-scroll { overflow: hidden; }
+
+        /* ============================ */
+        /* === 2. ÉLÉMENTS GLOBAUX ==== */
+        /* ============================ */
+        
+        /* --- Pré-chargeur --- */
+        #preloader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color); z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+        #preloader.loaded { opacity: 0; visibility: hidden; }
+        .spinner {
+            width: 50px; height: 50px; border-radius: 50%;
+            border: 4px solid var(--glass-border);
+            border-top-color: var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* --- Curseur personnalisé --- */
+        #custom-cursor { display: none; }
+        @media (pointer: fine) { /* Activer que pour les souris */
+            body { cursor: none; }
+            #custom-cursor {
+                display: block; position: fixed; top: 0; left: 0;
+                pointer-events: none; z-index: 9998;
+            }
+            .cursor-dot, .cursor-outline {
+                position: absolute; top: -50%; left: -50%;
+                border-radius: 50%; transition: transform 0.2s, opacity 0.2s;
+            }
+            .cursor-dot { width: 8px; height: 8px; background-color: var(--primary-color); }
+            .cursor-outline {
+                width: 40px; height: 40px; border: 2px solid var(--primary-color);
+                transition-duration: 0.3s;
+            }
+            #custom-cursor.hovered .cursor-outline { transform: scale(1.5); opacity: 0.5; }
+        }
+
+        /* --- Éléments de page --- */
+        .gradient-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: radial-gradient(circle at 10% 20%, var(--primary-color), transparent 40%),
+                        radial-gradient(circle at 80% 90%, var(--secondary-color), transparent 40%);
+            background-size: 200% 200%; filter: blur(80px);
+            animation: moveGradient 20s ease infinite; opacity: 0.5;
+        }
+        @keyframes moveGradient { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+        section { padding: 120px 0; position: relative; z-index: 2; }
+        h1, h2, h3 { font-weight: 600; }
+        .section-title {
+            font-size: 2.8rem; margin-bottom: 3rem; text-align: center;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%); /* Pour l'anim */
+        }
+        .section-title .char {
+            display: inline-block; transform: translateY(100%);
+        }
+        .glass-card {
+            background: var(--glass-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px; border: 1px solid var(--glass-border); padding: 2.5rem;
+            box-shadow: 0 8px 32px 0 var(--shadow-color); transition: var(--transition-medium);
+        }
+        .cta-button {
+            display: inline-block; padding: 1rem 2.5rem; cursor: pointer;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            color: white; text-decoration: none; border-radius: 50px; font-weight: 600;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 15px var(--shadow-color);
+        }
+        .cta-button:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 8px 25px var(--shadow-color); }
+
+        /* --- Bouton Retour en Haut --- */
+        #back-to-top {
+            position: fixed; bottom: 2rem; right: 2rem;
+            width: 50px; height: 50px; border-radius: 50%;
+            background: var(--glass-bg); backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 999; text-decoration: none;
+            opacity: 0; visibility: hidden; transform: translateY(20px);
+            transition: var(--transition-medium);
+        }
+        #back-to-top.visible { opacity: 1; visibility: visible; transform: translateY(0); }
+        #back-to-top svg { width: 24px; height: 24px; stroke: var(--text-color); }
+
+
+        /* ============================ */
+        /* === 3. HEADER & NAV ======== */
+        /* ============================ */
+        header {
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 100;
+            padding: 1.5rem 0; transition: var(--transition-fast);
+        }
+        header.scrolled {
+            background: var(--glass-bg); backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px var(--shadow-color);
+        }
+        nav { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .logo { font-size: 1.5rem; font-weight: 700; color: var(--text-color); text-decoration: none; }
+        .nav-links { list-style: none; display: flex; align-items: center; gap: 2rem; }
+        .nav-links a { text-decoration: none; color: var(--text-color); font-weight: 400; position: relative; padding-bottom: 5px; }
+        .nav-links a::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); transition: width 0.3s ease;
+        }
+        .nav-links a:hover::after, .nav-links a.active::after { width: 100%; }
+        .header-controls { display: flex; align-items: center; gap: 1rem; }
+        .theme-toggle-btn { background: none; border: none; cursor: pointer; padding: 5px; display: flex; }
+        .theme-toggle-btn svg { width: 24px; height: 24px; fill: var(--text-color); transition: var(--transition-medium); }
+        .theme-toggle-btn .sun-icon { display: none; }
+        body.dark-mode .theme-toggle-btn .moon-icon { display: none; }
+        body.dark-mode .theme-toggle-btn .sun-icon { display: block; }
+        .theme-toggle-btn:hover svg { transform: scale(1.1) rotate(15deg); }
+
+        /* Menu Hamburger & Navigation Mobile */
+        .hamburger-btn { display: none; background: none; border: none; cursor: pointer; z-index: 1001; }
+        .hamburger-btn span {
+            display: block; width: 25px; height: 3px; margin: 5px 0;
+            background-color: var(--text-color); border-radius: 3px;
+            transition: var(--transition-fast);
+        }
+        .mobile-nav {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transform: translateX(100%); transition: transform 0.4s var(--ease-out-cubic);
+        }
+        .mobile-nav.is-open { transform: translateX(0); }
+        .mobile-nav-links { list-style: none; text-align: center; }
+        .mobile-nav-links li { margin: 2rem 0; }
+        .mobile-nav-links a { color: var(--text-color); text-decoration: none; font-size: 2rem; font-weight: 600; opacity: 0; transform: translateY(20px); }
+        .mobile-nav.is-open .mobile-nav-links a { animation: fadeInLinks 0.5s ease-out forwards; }
+        .mobile-nav.is-open .mobile-nav-links li:nth-child(1) a { animation-delay: 0.3s; }
+        .mobile-nav.is-open .mobile-nav-links li:nth-child(2) a { animation-delay: 0.4s; }
+        .mobile-nav.is-open .mobile-nav-links li:nth-child(3) a { animation-delay: 0.5s; }
+        .mobile-nav.is-open .mobile-nav-links li:nth-child(4) a { animation-delay: 0.6s; }
+        @keyframes fadeInLinks { to { opacity: 1; transform: translateY(0); } }
+
+        /* ============================ */
+        /* === 4. SECTIONS STYLING ==== */
+        /* ============================ */
+        
+        /* --- Hero --- */
+        #hero { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
+        .hero-content { position: relative; z-index: 2; }
+        .hero-title {
+            position: relative; font-size: clamp(2.5rem, 10vw, 6rem); font-weight: 700; line-height: 1.1;
+            color: transparent; background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text; background-clip: text;
+        }
+        .hero-title::after {
+            content: attr(data-text); position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(90deg, transparent 0%, transparent 20%, rgba(255, 255, 255, 0.8) 50%, transparent 80%, transparent 100%);
+            background-size: 200% 100%; background-position: -200% 0;
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            animation: textShineOptimized 4s ease-in-out infinite; animation-delay: 2s;
+        }
+        @keyframes textShineOptimized { to { background-position: 200% 0; } }
+        .hero-slogan { font-size: 1.2rem; margin: 1rem 0 2rem; font-weight: 300; }
+        
+        /* --- Services --- */
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; }
+        .service-card { text-align: center; }
+        .service-card svg {
+            width: 50px; height: 50px; margin-bottom: 1.5rem;
+            fill: var(--primary-color);
+            transition: var(--transition-fast);
+        }
+        .service-card:hover svg { transform: scale(1.1) translateY(-5px); }
+        .service-card h3 { font-size: 1.5rem; margin-bottom: 1rem; }
+        .service-card p { font-size: 0.95rem; line-height: 1.6; color: var(--text-color); opacity: 0.8; }
+
+        /* --- About --- */
+        #about p { line-height: 1.8; font-size: 1.1rem; max-width: 800px; margin: 0 auto; text-align: center; }
+        
+        /* --- Process --- */
+        .process-steps { display: flex; flex-direction: column; gap: 4rem; margin-top: 2rem; }
+        .process-step { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 3rem; }
+        .process-step:nth-child(even) .process-image { grid-column: 2; grid-row: 1; }
+        .process-image { border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px var(--shadow-color); }
+        .process-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .process-text .step-number {
+            font-size: 3rem; font-weight: 700;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            display: block; margin-bottom: 0.5rem;
+        }
+        .process-text h3 { font-size: 1.8rem; margin-bottom: 1rem; }
+        .process-text p { line-height: 1.7; opacity: 0.8; }
+        
+        /* --- Portfolio & Lightbox --- */
+        .portfolio-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+        .portfolio-item { position: relative; overflow: hidden; border-radius: 15px; aspect-ratio: 16/9; cursor: pointer; transform: translateY(50px); opacity: 0; }
+        .portfolio-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+        .portfolio-item:hover img { transform: scale(1.1); }
+        .portfolio-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            display: flex; align-items: flex-end; padding: 1.5rem;
+            opacity: 0; transition: opacity 0.4s ease;
+        }
+        .portfolio-item:hover .portfolio-overlay { opacity: 1; }
+        .portfolio-overlay h3 { color: white; font-size: 1.2rem; transform: translateY(20px); transition: transform 0.4s ease; }
+        .portfolio-item:hover .portfolio-overlay h3 { transform: translateY(0); }
+        #lightbox {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px);
+            z-index: 1001; display: none; justify-content: center; align-items: center;
+            padding: 2rem; opacity: 0; transition: opacity 0.4s ease;
+        }
+        #lightbox.show { display: flex; opacity: 1; }
+        #lightbox img { max-width: 90%; max-height: 80%; object-fit: contain; }
+        #lightbox-close {
+            position: absolute; top: 2rem; right: 2rem;
+            width: 40px; height: 40px; background: none; border: none;
+            cursor: pointer;
+        }
+        #lightbox-close svg { width: 100%; height: 100%; stroke: white; transition: transform 0.3s; }
+        #lightbox-close:hover svg { transform: rotate(90deg); }
+
+        /* --- Testimonials --- */
+        .testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+        .testimonial-card { padding: 2rem; }
+        .testimonial-card blockquote { border: none; margin: 0 0 1.5rem 0; font-style: italic; line-height: 1.6; }
+        .testimonial-author { display: flex; align-items: center; gap: 1rem; }
+        .testimonial-author img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+        .author-info strong { display: block; font-weight: 600; }
+        .author-info span { font-size: 0.9rem; opacity: 0.7; }
+
+        /* --- Contact Form --- */
+        #contact-form { display: flex; flex-direction: column; gap: 1.5rem; }
+        .form-group { position: relative; }
+        .form-input {
+            width: 100%; padding: 1rem; background: transparent; border: 1px solid var(--glass-border);
+            border-radius: 10px; color: var(--text-color); font-family: var(--font-main);
+            font-size: 1rem; transition: border-color 0.3s ease;
+        }
+        .form-input:focus { outline: none; border-color: var(--primary-color); }
+        .form-label {
+            position: absolute; top: 1rem; left: 1rem; color: var(--text-color);
+            pointer-events: none; transition: all 0.3s ease;
+        }
+        .form-input:focus ~ .form-label, .form-input:not(:placeholder-shown) ~ .form-label {
+            top: -0.75rem; left: 0.75rem; font-size: 0.8rem; padding: 0 0.25rem;
+            background-color: var(--bg-color); color: var(--primary-color);
+        }
+        textarea.form-input { resize: vertical; min-height: 150px; }
+        .form-status { text-align: center; margin-top: 1rem; font-weight: 600; height: 1em; }
+
+        /* --- Footer --- */
+        footer { padding: 3rem 0; text-align: center; border-top: 1px solid var(--glass-border); }
+        .social-links { margin-bottom: 1rem; }
+        .social-links a { margin: 0 1rem; display: inline-block; }
+        .social-links svg { width: 28px; height: 28px; fill: var(--text-color); transition: var(--transition-fast); }
+        .social-links a:hover svg { fill: var(--primary-color); transform: translateY(-3px); }
+
+        /* ============================ */
+        /* === 5. RESPONSIVE DESIGN === */
+        /* ============================ */
+        @media (max-width: 992px) {
+            .process-step { grid-template-columns: 1fr; }
+            .process-step:nth-child(even) .process-image { grid-column: 1; grid-row: auto; }
+            .process-image { max-width: 450px; margin: 0 auto 2rem auto; }
+            .process-text { text-align: center; }
+        }
+        @media (max-width: 768px) {
+            .container { padding: 0 1.5rem; }
+            .nav-links { display: none; }
+            .hamburger-btn { display: block; }
+            section { padding: 80px 0; }
+            .section-title { font-size: 2.2rem; }
+            .hero-slogan { font-size: 1.1rem; }
+            .glass-card { padding: 2rem; }
+            #about p { font-size: 1rem; }
+        }
+        @media (max-width: 480px) {
+            .container { padding: 0 1rem; }
+            .cta-button { padding: 0.8rem 1.8rem; font-size: 0.9rem; }
+            .glass-card { padding: 1.5rem; }
+            .social-links a { margin: 0 0.7rem; }
+            .section-title { font-size: 2rem; margin-bottom: 2rem; }
+            #back-to-top { width: 40px; height: 40px; right: 1rem; bottom: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="preloader"><div class="spinner"></div></div>
+    <div id="custom-cursor"><div class="cursor-dot"></div><div class="cursor-outline"></div></div>
+    <div class="gradient-bg"></div>
+
+    <header id="main-header">
+        <div class="container">
+            <nav>
+                <a href="#hero" class="logo interactive">Art.</a>
+                <ul class="nav-links">
+                    <li><a href="#hero" class="nav-link interactive">Accueil</a></li>
+                    <li><a href="#services" class="nav-link interactive">Services</a></li>
+                    <li><a href="#about" class="nav-link interactive">À Propos</a></li>
+                    <li><a href="#portfolio" class="nav-link interactive">Portfolio</a></li>
+                    <li><a href="#contact" class="nav-link interactive">Contact</a></li>
+                </ul>
+                <div class="header-controls">
+                    <button class="theme-toggle-btn interactive" aria-label="Changer de thème">
+                        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 11.807A9.002 9.002 0 0 1 10.049 2a9.942 9.942 0 0 0-5.12 2.735c-3.905 3.905-3.905 10.237 0 14.142 3.906 3.906 10.237 3.906 14.142 0A9.942 9.942 0 0 0 22 13.951a9.002 9.002 0 0 1-9.951-2.144A1 1 0 0 0 12 11.807z"/></svg>
+                        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 4a1 1 0 0 1 1 1v1a1 1 0 0 1-2 0V5a1 1 0 0 1 1-1zm0 14a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zM20 12a1 1 0 0 1-1-1h-1a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1zm-14 0a1 1 0 0 1-1-1H5a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1zM17.657 7.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 0 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zm-12.728 9.9a1 1 0 0 1 1.414 0l.707.707a1 1 0 0 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM6.343 7.343a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zm11.314 9.9a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0z"/></svg>
+                    </button>
+                    <button class="hamburger-btn interactive" aria-label="Ouvrir le menu">
+                        <span></span><span></span><span></span>
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <div class="mobile-nav">
+        <ul class="mobile-nav-links">
+            <li><a href="#hero" class="interactive">Accueil</a></li>
+            <li><a href="#services" class="interactive">Services</a></li>
+            <li><a href="#about" class="interactive">À Propos</a></li>
+            <li><a href="#portfolio" class="interactive">Portfolio</a></li>
+            <li><a href="#testimonials" class="interactive">Avis</a></li>
+            <li><a href="#contact" class="interactive">Contact</a></li>
+        </ul>
+    </div>
+
+    <main>
+        <section id="hero">
+            <div class="container hero-content">
+                <h1 class="hero-title" data-text="Créativité. Numérique.">Créativité. Numérique.</h1>
+                <p class="hero-slogan">L'art rencontre la technologie dans un univers visuel immersif.</p>
+                <a href="#portfolio" class="cta-button interactive">Découvrir mes œuvres</a>
+            </div>
+        </section>
+
+        <section id="services">
+            <div class="container">
+                <h2 class="section-title" data-splitting>Mes Services</h2>
+                <div class="services-grid">
+                    <div class="glass-card service-card anim-on-scroll">
+                        <svg viewBox="0 0 24 24"><path d="M13 10h-2v3h2v-3zm7-8H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 14H7v-2h10v2zm-3-4H7v-2h7v2zm3-4H7V6h10v2z"/></svg>
+                        <h3>Design UI/UX</h3>
+                        <p>Création d'interfaces intuitives et esthétiques qui offrent une expérience utilisateur mémorable.</p>
+                    </div>
+                    <div class="glass-card service-card anim-on-scroll" style="animation-delay: 0.2s;">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2.5-3.5l5-2.5-5-2.5v5z"/></svg>
+                        <h3>Motion Design</h3>
+                        <p>Donner vie à vos idées avec des animations fluides et captivantes pour le web et les médias sociaux.</p>
+                    </div>
+                    <div class="glass-card service-card anim-on-scroll" style="animation-delay: 0.4s;">
+                        <svg viewBox="0 0 24 24"><path d="M21.29 8.71L12 18l-9.29-9.29c-.39-.39-.39-1.02 0-1.41l.71-.71c.39-.39 1.02-.39 1.41 0L12 13.17l7.17-7.17c.39-.39 1.02-.39 1.41 0l.71.71c.39.39.39 1.02 0 1.41z"/></svg>
+                        <h3>Modélisation 3D</h3>
+                        <p>Conception d'objets et de scènes en trois dimensions pour des rendus réalistes et artistiques.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="about">
+            <div class="container">
+                 <div class="glass-card anim-on-scroll">
+                    <h2 class="section-title" data-splitting>Mon Approche</h2>
+                     <p>Je suis un artiste numérique passionné par la fusion de l'esthétique et de l'interactivité. Mon travail explore les frontières du design moderne, en utilisant des technologies de pointe pour créer des expériences qui ne sont pas seulement belles à voir, mais aussi intuitives et engageantes. Chaque projet est une toile où la lumière, la couleur et le mouvement s'harmonisent pour raconter une histoire.</p>
+                 </div>
+            </div>
+        </section>
+        
+        <section id="process">
+            <div class="container">
+                <h2 class="section-title" data-splitting>Mon Processus</h2>
+                <div class="process-steps">
+                    <div class="process-step anim-on-scroll">
+                        <div class="process-image"><img src="https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=800&q=70" alt="Étape 1: Discussion"></div>
+                        <div class="process-text">
+                            <span class="step-number">01</span><h3>Concept & Stratégie</h3>
+                            <p>Tout commence par une idée. Nous discutons de vos objectifs pour définir une stratégie créative claire et un concept fort qui servira de fondation au projet.</p>
+                        </div>
+                    </div>
+                    <div class="process-step anim-on-scroll">
+                        <div class="process-image"><img src="https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=70" alt="Étape 2: Création"></div>
+                        <div class="process-text">
+                            <span class="step-number">02</span><h3>Design & Développement</h3>
+                            <p>C'est ici que la magie opère. Je traduis le concept en un design visuel, puis je le développe avec une attention méticuleuse aux détails, à l'animation et à l'interactivité.</p>
+                        </div>
+                    </div>
+                    <div class="process-step anim-on-scroll">
+                        <div class="process-image"><img src="https://images.unsplash.com/photo-1556740758-90de374c12ad?auto=format&fit=crop&w=800&q=70" alt="Étape 3: Finalisation"></div>
+                        <div class="process-text">
+                            <span class="step-number">03</span><h3>Révision & Lancement</h3>
+                            <p>Nous passons en revue le projet ensemble pour les derniers ajustements. Une fois validé, je prépare tout pour un lancement réussi et une performance optimale.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="portfolio">
+            <div class="container">
+                <h2 class="section-title" data-splitting>Mon Portfolio</h2>
+                <div class="portfolio-grid">
+                    <div class="portfolio-item interactive" data-img-src="https://images.unsplash.com/photo-1523588904849-5246874431a8?auto=format&fit=crop&w=1200&q=80">
+                        <img src="https://images.unsplash.com/photo-1523588904849-5246874431a8?auto=format&fit=crop&w=800&q=70" alt="Projet Nébuleuse"><div class="portfolio-overlay"><h3>Projet Nébuleuse</h3></div></div>
+                    <div class="portfolio-item interactive" data-img-src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=1200&q=80">
+                        <img src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=800&q=70" alt="Composition Florale"><div class="portfolio-overlay"><h3>Composition Florale</h3></div></div>
+                    <div class="portfolio-item interactive" data-img-src="https://images.unsplash.com/photo-1617791160536-595a72402c6d?auto=format&fit=crop&w=1200&q=80">
+                        <img src="https://images.unsplash.com/photo-1617791160536-595a72402c6d?auto=format&fit=crop&w=800&q=70" alt="Vagues de Gradient"><div class="portfolio-overlay"><h3>Vagues de Gradient</h3></div></div>
+                    <div class="portfolio-item interactive" data-img-src="https://images.unsplash.com/photo-1604871025211-b6a19557361a?auto=format&fit=crop&w=1200&q=80">
+                        <img src="https://images.unsplash.com/photo-1604871025211-b6a19557361a?auto=format&fit=crop&w=800&q=70" alt="Portrait Abstrait"><div class="portfolio-overlay"><h3>Portrait Abstrait</h3></div></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="testimonials">
+            <div class="container">
+                <h2 class="section-title" data-splitting>Ce qu'ils en disent</h2>
+                <div class="testimonials-grid">
+                    <div class="glass-card testimonial-card anim-on-scroll">
+                        <blockquote>"Un talent exceptionnel pour transformer une vision complexe en une expérience numérique intuitive et magnifique. Le professionnalisme était au rendez-vous du début à la fin."</blockquote>
+                        <div class="testimonial-author">
+                            <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Jane Doe">
+                            <div class="author-info"><strong>Jane Doe</strong><span>CEO, Innovatech</span></div>
+                        </div>
+                    </div>
+                    <div class="glass-card testimonial-card anim-on-scroll" style="animation-delay: 0.2s;">
+                        <blockquote>"La créativité et la qualité technique sont inégalées. Notre projet a été porté à un niveau que nous n'aurions jamais imaginé. Un vrai plaisir de collaborer."</blockquote>
+                        <div class="testimonial-author">
+                            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="John Smith">
+                            <div class="author-info"><strong>John Smith</strong><span>Directeur Artistique, Vision Média</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact">
+            <div class="container anim-on-scroll">
+                 <div class="glass-card">
+                    <h2 class="section-title" data-splitting>Contactez-moi</h2>
+                    <form id="contact-form">
+                        <div class="form-group"><input type="text" id="from_name" name="from_name" class="form-input interactive" placeholder=" " required><label for="from_name" class="form-label">Nom</label></div>
+                        <div class="form-group"><input type="email" id="from_email" name="from_email" class="form-input interactive" placeholder=" " required><label for="from_email" class="form-label">Email</label></div>
+                        <div class="form-group"><textarea id="message" name="message" class="form-input interactive" placeholder=" " required></textarea><label for="message" class="form-label">Votre message</label></div>
+                        <button type="submit" class="cta-button interactive" style="align-self: center;">Envoyer le message</button>
+                    </form>
+                    <div id="form-status" class="form-status"></div>
+                 </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="lightbox">
+        <img id="lightbox-img" src="" alt="Œuvre en gros plan">
+        <button id="lightbox-close" class="interactive" aria-label="Fermer">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    </div>
+
+    <a href="#hero" id="back-to-top" class="interactive" aria-label="Retour en haut">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </a>
+
+    <footer>
+        <div class="container">
+            <div class="social-links">
+                <a href="#" aria-label="Twitter" class="interactive"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M23.643 4.937c-.835.37-1.732.62-2.675.733a4.67 4.67 0 0 0 2.048-2.578 9.3 9.3 0 0 1-2.958 1.13a4.66 4.66 0 0 0-7.938 4.25a13.229 13.229 0 0 1-9.602-4.868c-.337.58-.53 1.26-.53 1.996a4.658 4.658 0 0 0 2.068 3.868c-.76-.025-1.474-.23-2.1-.58v.06a4.657 4.657 0 0 0 3.737 4.568a4.692 4.692 0 0 1-2.094.08A4.656 4.656 0 0 0 9.28 17.58a9.38 9.38 0 0 1-5.786 2A9.49 9.49 0 0 1 0 19.54a13.175 13.175 0 0 0 7.14 2.094c8.57 0 13.255-7.098 13.255-13.254c0-.2-.005-.402-.014-.602a9.47 9.47 0 0 0 2.26-2.343z"/></svg></a>
+                <a href="#" aria-label="Instagram" class="interactive"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919C8.416 2.175 8.796 2.163 12 2.163zm0 1.802C8.841 3.965 8.564 3.978 7.37 4.033c-2.43.111-3.64 1.321-3.75 3.75-.055 1.194-.067 1.47-.067 4.217s.012 3.024.067 4.217c.11 2.43 1.321 3.64 3.75 3.75 1.194.055 1.47.067 4.217.067s3.024-.012 4.217-.067c2.43-.11 3.64-1.321 3.75-3.75.055-1.194.067-1.47.067-4.217s-.012-3.024-.067-4.217c-.11-2.43-1.32-3.64-3.75-3.75-1.194-.055-1.47-.067-4.217-.067zm0 3.391c-2.42 0-4.381 1.961-4.381 4.381s1.961 4.381 4.381 4.381 4.381-1.961 4.381-4.381S14.42 7.354 12 7.354zm0 7.042c-1.463 0-2.651-1.188-2.651-2.651s1.188-2.651 2.651-2.651 2.651 1.188 2.651 2.651-1.188 2.651-2.651 2.651zm6.156-7.403c0 .546-.443 1.001-1.001 1.001s-1.001-.455-1.001-1.001.443-1.001 1.001-1.001 1.001.455 1.001 1.001z"/></svg></a>
+                <a href="#" aria-label="LinkedIn" class="interactive"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.125 2.062 2.062 0 0 1 0 4.125zm1.777 13.019H3.56V9h3.554v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"/></svg></a>
+            </div>
+            <p>© 2024 Portfolio Créatif. Tous droits réservés.</p>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // ============================
+        // === INITIALISATION =========
+        // ============================
+        const body = document.body;
+        
+        // --- 1. Pré-chargeur ---
+        const preloader = document.getElementById('preloader');
+        window.addEventListener('load', () => {
+            preloader.classList.add('loaded');
+            body.classList.remove('no-scroll'); // Activer le scroll après chargement
+        });
+        body.classList.add('no-scroll'); // Bloquer le scroll pendant le chargement
+        
+        // --- 2. Curseur personnalisé ---
+        const cursor = document.getElementById('custom-cursor');
+        if (cursor) {
+            const cursorDot = cursor.querySelector('.cursor-dot');
+            const cursorOutline = cursor.querySelector('.cursor-outline');
+            const interactiveElements = document.querySelectorAll('.interactive');
+
+            let mouseX = 0, mouseY = 0;
+            let dotX = 0, dotY = 0;
+            let outlineX = 0, outlineY = 0;
+            
+            window.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            const animateCursor = () => {
+                // Dot (suit directement)
+                dotX += (mouseX - dotX) * 0.9;
+                dotY += (mouseY - dotY) * 0.9;
+                cursorDot.style.transform = `translate(${dotX}px, ${dotY}px)`;
+                
+                // Outline (avec un léger retard)
+                outlineX += (mouseX - outlineX) * 0.2;
+                outlineY += (mouseY - outlineY) * 0.2;
+                cursorOutline.style.transform = `translate(${outlineX}px, ${outlineY}px)`;
+                
+                requestAnimationFrame(animateCursor);
+            };
+            requestAnimationFrame(animateCursor);
+            
+            interactiveElements.forEach(el => {
+                el.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
+                el.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
+            });
+        }
+        
+        // --- 3. Titres animés "lettre par lettre" ---
+        document.querySelectorAll("[data-splitting]").forEach(title => {
+            const chars = title.innerText.split('');
+            title.innerHTML = chars.map(char => `<span class="char">${char === ' ' ? ' ' : char}</span>`).join('');
+            
+            gsap.from(title.querySelectorAll(".char"), {
+                scrollTrigger: {
+                    trigger: title,
+                    start: "top 85%",
+                    toggleActions: "play none none none"
+                },
+                y: "100%",
+                opacity: 0,
+                stagger: 0.03,
+                duration: 0.8,
+                ease: "power2.out"
+            });
+        });
+        
+        // --- 4. Menu Mobile ---
+        const hamburgerBtn = document.querySelector('.hamburger-btn');
+        const mobileNav = document.querySelector('.mobile-nav');
+        const mobileNavLinks = document.querySelectorAll('.mobile-nav a');
+        const toggleMenu = () => {
+            mobileNav.classList.toggle('is-open');
+            body.classList.toggle('no-scroll');
+        };
+        hamburgerBtn.addEventListener('click', toggleMenu);
+        mobileNavLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (mobileNav.classList.contains('is-open')) toggleMenu();
+            });
+        });
+        
+        // --- 5. Mode Sombre/Clair ---
+        const themeToggleBtn = document.querySelector('.theme-toggle-btn');
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+            body.classList.add('dark-mode');
+        }
+        themeToggleBtn.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', body.classList.contains('dark-mode') ? 'dark' : 'light');
+        });
+
+        // ============================
+        // === ANIMATIONS AU SCROLL ===
+        // ============================
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Header qui devient "glassy"
+        ScrollTrigger.create({
+            start: 'top -80', end: 99999,
+            toggleClass: { className: 'scrolled', targets: '#main-header' }
+        });
+
+        // Parallaxe sur le titre Hero
+        gsap.to(".hero-title", {
+            y: "30vh",
+            scrollTrigger: { trigger: "#hero", start: "top top", end: "bottom top", scrub: 1.2 }
+        });
+        
+        // Apparition générique des éléments
+        gsap.utils.toArray('.anim-on-scroll').forEach(el => {
+            gsap.from(el, { opacity: 0, y: 50, duration: 1,
+                scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none none' }
+            });
+        });
+
+        // Apparition des items du portfolio
+        gsap.utils.toArray('.portfolio-item').forEach((item, index) => {
+            gsap.to(item, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out",
+                scrollTrigger: { trigger: ".portfolio-grid", start: "top 70%", toggleActions: 'play none none none' },
+                delay: index * 0.1
+            });
+        });
+        
+        // Bouton "Retour en Haut"
+        const backToTopBtn = document.getElementById('back-to-top');
+        ScrollTrigger.create({
+            start: "top -50%",
+            onUpdate: self => {
+                self.direction === -1 ? backToTopBtn.classList.add('visible') : backToTopBtn.classList.remove('visible');
+            },
+            onLeaveBack: () => backToTopBtn.classList.remove('visible')
+        });
+
+        // ============================
+        // === FONCTIONNALITÉS ========
+        // ============================
+        
+        // --- 1. Lightbox du Portfolio ---
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxClose = document.getElementById('lightbox-close');
+        
+        document.querySelectorAll('.portfolio-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const imgSrc = item.getAttribute('data-img-src');
+                lightboxImg.setAttribute('src', imgSrc);
+                lightbox.classList.add('show');
+                body.classList.add('no-scroll');
+            });
+        });
+        
+        const closeLightbox = () => {
+            lightbox.classList.remove('show');
+            body.classList.remove('no-scroll');
+        };
+        
+        lightboxClose.addEventListener('click', closeLightbox);
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) closeLightbox();
+        });
+
+        // --- 2. Formulaire de contact EmailJS ---
+        const contactForm = document.getElementById('contact-form');
+        const formStatus = document.getElementById('form-status');
+        const EMAILJS_PUBLIC_KEY = 'VOTRE_PUBLIC_KEY'; // REMPLACEZ ICI
+        const EMAILJS_SERVICE_ID = 'VOTRE_SERVICE_ID'; // REMPLACEZ ICI
+        const EMAILJS_TEMPLATE_ID = 'VOTRE_TEMPLATE_ID'; // REMPLACEZ ICI
+        
+        (function(){ emailjs.init(EMAILJS_PUBLIC_KEY); })();
+        
+        contactForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            formStatus.textContent = 'Envoi en cours...';
+            formStatus.style.color = 'var(--text-color)';
+            if (EMAILJS_PUBLIC_KEY === 'VOTRE_PUBLIC_KEY') {
+                formStatus.textContent = "Erreur: Configurez vos clés EmailJS.";
+                formStatus.style.color = 'red';
+                return;
+            }
+            emailjs.sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, this)
+                .then(() => {
+                    formStatus.textContent = 'Message envoyé avec succès !';
+                    formStatus.style.color = 'green';
+                    contactForm.reset();
+                }, (error) => {
+                    formStatus.textContent = 'Échec: ' + JSON.stringify(error);
+                    formStatus.style.color = 'red';
+                });
+        });
+    });
+    </script>
+</body>
+</html>
